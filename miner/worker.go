@@ -1017,7 +1017,6 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
-
 	tstart := time.Now()
 	parent := w.chain.CurrentBlock()
 
@@ -1112,10 +1111,14 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		log.Error("Failed to fetch pending transactions", "err", err)
 		return
 	}
-	// Short circuit if there is no available pending transactions.
+	// Short circuit if there is no available pending transactions or bundles.
 	// But if we disable empty precommit already, ignore it. Since
 	// empty block is necessary to keep the liveness of the network.
-	if len(pending) == 0 && atomic.LoadUint32(&w.noempty) == 0 {
+	noBundles := true
+	if w.flashbots.isFlashbots && len(w.eth.TxPool().AllMevBundles()) > 0 {
+		noBundles = false
+	}
+	if len(pending) == 0 && atomic.LoadUint32(&w.noempty) == 0 && noBundles {
 		w.updateSnapshot()
 		return
 	}
@@ -1129,11 +1132,11 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	}
 	if w.flashbots.isFlashbots {
 		bundles, err := w.eth.TxPool().MevBundles(header.Number, header.Time)
-		maxBundle, bundlePrice := w.findMostProfitableBundle(bundles, w.coinbase, parent, header)
 		if err != nil {
 			log.Error("Failed to fetch pending transactions", "err", err)
 			return
 		}
+		maxBundle, bundlePrice := w.findMostProfitableBundle(bundles, w.coinbase, parent, header)
 		log.Info("Flashbots bundle", "bundlePrice", bundlePrice, "bundleLength", len(maxBundle))
 		if w.commitBundle(maxBundle, w.coinbase, interrupt) {
 			return
