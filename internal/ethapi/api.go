@@ -126,6 +126,48 @@ func (s *PublicTxPoolAPI) Content() map[string]map[string]map[string]*RPCTransac
 	return content
 }
 
+// PatchedContent returns the transactions contained within the transaction pool.
+func (s *PublicTxPoolAPI) PatchedContent(ctx context.Context, allowedTo []common.Address) map[string]map[string]map[string]*RPCTransaction {
+	content := map[string]map[string]map[string]*RPCTransaction{
+		"pending": make(map[string]map[string]*RPCTransaction),
+		"queued":  make(map[string]map[string]*RPCTransaction),
+	}
+	pending, queue := s.b.TxPoolContent()
+	log.Info(fmt.Sprintf("AllowedTo: %v", allowedTo))
+
+	// Flatten the pending transactions
+	for account, txs := range pending {
+		dump := make(map[string]*RPCTransaction)
+
+		for _, tx := range txs {
+			for _, to := range allowedTo {
+				txTo := tx.To()
+				if txTo != nil && *txTo == to {
+					dump[fmt.Sprintf("%d", tx.Nonce())] = newRPCPendingTransaction(tx)
+				}
+			}
+		}
+		content["pending"][account.Hex()] = dump
+	}
+
+	// Flatten the queued transactions
+	for account, txs := range queue {
+		dump := make(map[string]*RPCTransaction)
+
+		for _, tx := range txs {
+			for _, to := range allowedTo {
+				txTo := tx.To()
+				if txTo != nil && *txTo == to {
+					dump[fmt.Sprintf("%d", tx.Nonce())] = newRPCPendingTransaction(tx)
+				}
+			}
+		}
+		content["queued"][account.Hex()] = dump
+	}
+
+	return content
+}
+
 // Status returns the number of pending and queued transaction in the pool.
 func (s *PublicTxPoolAPI) Status() map[string]hexutil.Uint {
 	pending, queue := s.b.Stats()
