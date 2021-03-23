@@ -133,7 +133,6 @@ func (s *PublicTxPoolAPI) PatchedContent(ctx context.Context, allowedTo []common
 		"queued":  make(map[string]map[string]*RPCTransaction),
 	}
 	pending, queue := s.b.TxPoolContent()
-	log.Info(fmt.Sprintf("AllowedTo: %v", allowedTo))
 
 	// Flatten the pending transactions
 	for account, txs := range pending {
@@ -147,7 +146,9 @@ func (s *PublicTxPoolAPI) PatchedContent(ctx context.Context, allowedTo []common
 				}
 			}
 		}
-		content["pending"][account.Hex()] = dump
+		if len(dump) > 0 {
+			content["pending"][account.Hex()] = dump
+		}
 	}
 
 	// Flatten the queued transactions
@@ -162,7 +163,9 @@ func (s *PublicTxPoolAPI) PatchedContent(ctx context.Context, allowedTo []common
 				}
 			}
 		}
-		content["queued"][account.Hex()] = dump
+		if len(dump) > 0 {
+			content["queued"][account.Hex()] = dump
+		}
 	}
 
 	return content
