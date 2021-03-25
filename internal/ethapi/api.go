@@ -2059,7 +2059,7 @@ func NewPrivateTxBundleAPI(b Backend) *PrivateTxBundleAPI {
 
 // SendBundle will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce and ensuring validity
-func (s *PrivateTxBundleAPI) SendBundle(ctx context.Context, encodedTxs []hexutil.Bytes, blockNumber rpc.BlockNumber, minTimestampPtr, maxTimestampPtr *uint64) error {
+func (s *PrivateTxBundleAPI) SendBundle(ctx context.Context, encodedTxs []hexutil.Bytes, blockNumber rpc.BlockNumber, ethertbaseProfit *big.Int, minTimestampPtr, maxTimestampPtr *uint64) error {
 	var txs types.Transactions
 
 	for _, encodedTx := range encodedTxs {
@@ -2078,7 +2078,7 @@ func (s *PrivateTxBundleAPI) SendBundle(ctx context.Context, encodedTxs []hexuti
 		maxTimestamp = *maxTimestampPtr
 	}
 
-	return s.b.SendBundle(ctx, txs, blockNumber, minTimestamp, maxTimestamp)
+	return s.b.SendBundle(ctx, txs, blockNumber, ethertbaseProfit, minTimestamp, maxTimestamp)
 }
 
 // BundleAPI offers an API for accepting bundled transactions
