@@ -22,9 +22,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type mevBundle struct {
-	txs          types.Transactions
-	blockNumber  *big.Int
-	minTimestamp uint64
-	maxTimestamp uint64
+// MevBundle struct
+type MevBundle struct {
+	Txs             types.Transactions
+	BlockNumber     *big.Int
+	EtherbaseProfit *big.Int
+	MinTimestamp    uint64
+	MaxTimestamp    uint64
 }

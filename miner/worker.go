@@ -801,7 +801,7 @@ func (w *worker) commitTransaction(tx *types.Transaction, coinbase common.Addres
 	return receipt.Logs, nil
 }
 
-func (w *worker) commitBundle(txs types.Transactions, coinbase common.Address, interrupt *int32) bool {
+func (w *worker) commitBundle(bundle core.MevBundle, coinbase common.Address, interrupt *int32) bool {
 	// Short circuit if current is nil
 	if w.current == nil {
 		return true
@@ -809,7 +809,7 @@ func (w *worker) commitBundle(txs types.Transactions, coinbase common.Address, i
 
 	var coalescedLogs []*types.Log
 
-	for _, tx := range txs {
+	for _, tx := range bundle.Txs {
 		// In the following three cases, we will interrupt the execution of the transaction.
 		// (1) new head block event arrival, the interrupt signal is 1
 		// (2) worker start or restart, the interrupt signal is 1
@@ -1140,7 +1140,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			return
 		}
 		maxBundle, bundlePrice, ethToCoinbase, gasUsed := w.findMostProfitableBundle(bundles, w.coinbase, parent, header)
-		log.Info("Flashbots bundle", "ethToCoinbase", ethToCoinbase, "gasUsed", gasUsed, "bundlePrice", bundlePrice, "bundleLength", len(maxBundle))
+		log.Info("Flashbots bundle", "ethToCoinbase", ethToCoinbase, "gasUsed", gasUsed, "bundlePrice", bundlePrice, "bundleLength", len(maxBundle.Txs), "etherbaseProfit", maxBundle.EtherbaseProfit)
 		if w.commitBundle(maxBundle, w.coinbase, interrupt) {
 			return
 		}
@@ -1193,13 +1193,13 @@ func (w *worker) commit(uncles []*types.Header, interval func(), update bool, st
 	return nil
 }
 
-func (w *worker) findMostProfitableBundle(bundles []types.Transactions, coinbase common.Address, parent *types.Block, header *types.Header) (types.Transactions, *big.Int, *big.Int, uint64) {
+func (w *worker) findMostProfitableBundle(bundles []core.MevBundle, coinbase common.Address, parent *types.Block, header *types.Header) (core.MevBundle, *big.Int, *big.Int, uint64) {
 	maxBundlePrice := new(big.Int)
 	maxTotalEth := new(big.Int)
 	var maxTotalGasUsed uint64
-	maxBundle := types.Transactions{}
+	maxBundle := core.MevBundle{}
 	for _, bundle := range bundles {
-		if len(bundle) == 0 {
+		if len(bundle.Txs) == 0 {
 			continue
 		}
 		totalEth, totalGasUsed, err := w.computeBundleGas(bundle, parent, header)
@@ -1223,7 +1223,7 @@ func (w *worker) findMostProfitableBundle(bundles []types.Transactions, coinbase
 
 // Compute the adjusted gas price for a whole bundle
 // Done by calculating all gas spent, adding transfers to the coinbase, and then dividing by gas used
-func (w *worker) computeBundleGas(bundle types.Transactions, parent *types.Block, header *types.Header) (*big.Int, uint64, error) {
+func (w *worker) computeBundleGas(bundle core.MevBundle, parent *types.Block, header *types.Header) (*big.Int, uint64, error) {
 	env, err := w.generateEnv(parent, header)
 	if err != nil {
 		return nil, 0, err
@@ -1234,14 +1234,15 @@ func (w *worker) computeBundleGas(bundle types.Transactions, parent *types.Block
 
 	coinbaseBalanceBefore := env.state.GetBalance(w.coinbase)
 
-	for _, tx := range bundle {
+	for _, tx := range bundle.Txs {
 		receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, &w.coinbase, env.gasPool, env.state, env.header, tx, &tempGasUsed, *w.chain.GetVMConfig())
 		if err != nil {
 			return nil, 0, err
 		}
 		totalGasUsed += receipt.GasUsed
 	}
-	coinbaseBalanceAfter := env.state.GetBalance(w.coinbase)
+	coinbaseBalanceAfter := new(big.Int)
+	coinbaseBalanceAfter = coinbaseBalanceAfter.Add(bundle.EtherbaseProfit, coinbaseBalanceBefore)
 	coinbaseDiff := new(big.Int).Sub(coinbaseBalanceAfter, coinbaseBalanceBefore)
 	totalEth := new(big.Int)
 	totalEth.Add(totalEth, coinbaseDiff)
