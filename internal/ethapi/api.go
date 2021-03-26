@@ -2031,6 +2031,7 @@ func (s *PrivateTxBundleAPI) SendBundle(ctx context.Context, encodedTxs []hexuti
 	if maxTimestampPtr != nil {
 		maxTimestamp = *maxTimestampPtr
 	}
+	log.Info("New Mev Bundle arrived:", "BlockNumber", blockNumber, "EthertbaseProfit", ethertbaseProfit)
 
 	return s.b.SendBundle(ctx, txs, blockNumber, ethertbaseProfit, minTimestamp, maxTimestamp)
 }
