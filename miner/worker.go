@@ -1235,7 +1235,7 @@ func (w *worker) computeBundleGas(bundle core.MevBundle, parent *types.Block, he
 		return nil, 0, err
 	}
 
-	var totalGasUsed uint64 = 0
+	var totalGasUsed uint64
 	var tempGasUsed uint64
 
 	coinbaseBalanceBefore := env.state.GetBalance(w.coinbase)
@@ -1249,6 +1249,7 @@ func (w *worker) computeBundleGas(bundle core.MevBundle, parent *types.Block, he
 	}
 	coinbaseBalanceAfter := new(big.Int)
 	coinbaseBalanceAfter = coinbaseBalanceAfter.Add(bundle.EtherbaseProfit, coinbaseBalanceBefore)
+	coinbaseBalanceAfter = coinbaseBalanceAfter.Add(coinbaseBalanceAfter, new(big.Int).SetUint64(totalGasUsed))
 	coinbaseDiff := new(big.Int).Sub(coinbaseBalanceAfter, coinbaseBalanceBefore)
 	totalEth := new(big.Int)
 	totalEth.Add(totalEth, coinbaseDiff)
