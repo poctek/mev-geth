@@ -25,7 +25,7 @@ start_node() {
             echo "Node failed to start; exiting."
             exit 1
         fi
-    else 
+    else
         geth \
         --port $netport \
         --syncmode $syncmode \
