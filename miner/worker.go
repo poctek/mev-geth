@@ -819,6 +819,8 @@ func (w *worker) commitBundle(bundle core.MevBundle, coinbase common.Address, in
 
 	var coalescedLogs []*types.Log
 
+  w.current.profit.Add(w.current.profit, bundle.EtherbaseProfit)
+
 	for _, tx := range bundle.Txs {
 		// In the following three cases, we will interrupt the execution of the transaction.
 		// (1) new head block event arrival, the interrupt signal is 1
@@ -1188,6 +1190,7 @@ func (w *worker) commit(uncles []*types.Header, interval func(), update bool, st
 			log.Info("Commit new mining work", "number", block.Number(), "sealhash", w.engine.SealHash(block.Header()),
 				"uncles", len(uncles), "txs", w.current.tcount,
 				"gas", block.GasUsed(), "fees", totalFees(block, receipts),
+        "profit", w.current.profit,
 				"elapsed", common.PrettyDuration(time.Since(start)),
 				"isFlashbots", w.flashbots.isFlashbots)
 
