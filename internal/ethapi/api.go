@@ -2059,7 +2059,7 @@ func NewPrivateTxBundleAPI(b Backend) *PrivateTxBundleAPI {
 
 // SendBundle will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce and ensuring validity
-func (s *PrivateTxBundleAPI) SendBundle(ctx context.Context, encodedTxs []hexutil.Bytes, blockNumber rpc.BlockNumber, ethertbaseProfit *big.Int, minTimestampPtr, maxTimestampPtr *uint64) error {
+func (s *PrivateTxBundleAPI) SendBundle(ctx context.Context, encodedTxs []hexutil.Bytes, blockNumber rpc.BlockNumber, etherbaseProfit *big.Int, minTimestampPtr, maxTimestampPtr *uint64) error {
 	var txs types.Transactions
 
 	for _, encodedTx := range encodedTxs {
@@ -2077,9 +2077,12 @@ func (s *PrivateTxBundleAPI) SendBundle(ctx context.Context, encodedTxs []hexuti
 	if maxTimestampPtr != nil {
 		maxTimestamp = *maxTimestampPtr
 	}
-	log.Info("New Mev Bundle arrived:", "BlockNumber", blockNumber, "EthertbaseProfit", ethertbaseProfit)
+	if etherbaseProfit == nil {
+		etherbaseProfit = new(big.Int).SetUint64(0)
+	}
+	log.Info("New Mev Bundle arrived:", "BlockNumber", blockNumber, "EtherbaseProfit", etherbaseProfit)
 
-	return s.b.SendBundle(ctx, txs, blockNumber, ethertbaseProfit, minTimestamp, maxTimestamp)
+	return s.b.SendBundle(ctx, txs, blockNumber, etherbaseProfit, minTimestamp, maxTimestamp)
 }
 
 // BundleAPI offers an API for accepting bundled transactions
