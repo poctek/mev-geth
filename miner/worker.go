@@ -1252,6 +1252,10 @@ func (w *worker) computeBundleGas(bundle core.MevBundle, parent *types.Block, he
 		if err != nil {
 			return nil, 0, err
 		}
+		if receipt.Status == types.ReceiptStatusFailed {
+			return nil, 0, errors.New("revert")
+		}
+
 		totalGasUsed += receipt.GasUsed
 	}
 	coinbaseBalanceAfter := env.state.GetBalance(w.coinbase)
