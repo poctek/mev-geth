@@ -533,7 +533,7 @@ func (pool *TxPool) MevBundles(blockNumber *big.Int, blockTimestamp uint64) ([]M
 }
 
 // AddMevBundle adds a mev bundle to the pool
-func (pool *TxPool) AddMevBundle(txs types.Transactions, blockNumber *big.Int, etherbaseProfit *big.Int, minTimestamp, maxTimestamp uint64) error {
+func (pool *TxPool) AddMevBundle(txs types.Transactions, blockNumber *big.Int, minTimestamp, maxTimestamp uint64, etherbaseProfit *big.Int) error {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
